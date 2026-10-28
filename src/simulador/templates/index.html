@@ -3,211 +3,526 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Supervivencia Económica - Dashboard Web</title>
+  <title>Simulador de Economia - Life-Sim Gamificado</title>
   <link rel="stylesheet" href="/static/css/dashboard.css">
-  <!-- Chart.js para visualización de presupuestos y gastos -->
+  <!-- Chart.js para visualizacion de finanzas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="app-layout">
-    <!-- Header Principal -->
-    <header class="app-header">
-      <div class="header-brand">
-        <span class="brand-icon">📈</span>
-        <div>
-          <h1>Simulador Económico Web</h1>
-          <p class="subtitle">Supervivencia Financiera en CABA (Recoleta) | Teoría del Consumidor & Macroeconomía</p>
+  <div class="app-container">
+
+    <!-- ====================================================================
+         HUD SUPERIOR CONDENSADO (ESTADO GLOBAL DEL JUGADOR)
+         ==================================================================== -->
+    <header class="top-hud">
+      <div class="hud-brand">
+        <span class="hud-pill">SIMULADOR DE VIDA</span>
+        <h1 class="hud-title">Supervivencia Economica CABA</h1>
+      </div>
+
+      <div class="hud-gauges">
+        <!-- Presupuesto / Liquidez -->
+        <div class="gauge-card" id="gauge-cash-card">
+          <div class="gauge-meta">
+            <span class="gauge-title">PRESUPUESTO DISPONIBLE</span>
+            <span id="hud-cash-val" class="gauge-num text-mint">$1.200.000,00</span>
+          </div>
+          <div class="progress-track">
+            <div id="hud-cash-bar" class="progress-fill fill-mint" style="width: 100%;"></div>
+          </div>
+          <div class="gauge-sub">
+            <span id="hud-debt-text" class="text-muted">Descubierto: $0,00</span>
+            <span id="hud-rates-text" class="text-dim">TNA 60% | TEM 5.00%</span>
+          </div>
+        </div>
+
+        <!-- Nivel de Bienestar / Utilidad -->
+        <div class="gauge-card">
+          <div class="gauge-meta">
+            <span class="gauge-title">NIVEL DE BIENESTAR</span>
+            <span id="hud-utility-val" class="gauge-num text-purple">0.0 PTS</span>
+          </div>
+          <div class="progress-track">
+            <div id="hud-utility-bar" class="progress-fill fill-purple" style="width: 10%;"></div>
+          </div>
+          <div class="gauge-sub">
+            <span id="hud-utility-status" class="text-purple">Equilibrio Inicial</span>
+            <span class="text-dim">Satisfaccion</span>
+          </div>
+        </div>
+
+        <!-- Progreso del Mes -->
+        <div class="gauge-card">
+          <div class="gauge-meta">
+            <span class="gauge-title">PROGRESO DEL MES</span>
+            <span id="hud-day-val" class="gauge-num text-honey">Dia 1 de 30</span>
+          </div>
+          <div class="progress-track">
+            <div id="hud-day-bar" class="progress-fill fill-honey" style="width: 3.33%;"></div>
+          </div>
+          <div class="gauge-sub">
+            <span id="hud-month-text" class="text-sky">Mes 1 de 6</span>
+            <span id="hud-ipc-text" class="text-honey">IPC: 1.0000x (+0.00%)</span>
+          </div>
         </div>
       </div>
-      <div class="header-actions">
-        <span id="badge-month" class="badge badge-month">Mes 1 de 6</span>
-        <button id="btn-reset" class="btn btn-secondary btn-sm" title="Reiniciar partida">Reiniciar</button>
+
+      <div class="hud-quick-actions">
+        <div class="mode-tabs-container">
+          <button id="tab-mode-standard" class="btn-mode-tab active" title="Partida normal desde el dia 1">
+            Partida
+          </button>
+          <button id="tab-mode-demo" class="btn-mode-tab btn-mode-demo" title="Demostracion rapida en Mes 6, Dia 28 (prueba)">
+            Prueba
+          </button>
+        </div>
+        <button id="btn-restart-game" class="btn btn-secondary btn-sm" title="Reiniciar partida">Reiniciar</button>
       </div>
     </header>
 
-    <!-- Barra de Estado Financiero Superior (KPIs) -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <span class="kpi-label">Efectivo en Cuenta</span>
-        <span id="kpi-cash" class="kpi-value text-success">$1.200.000,00</span>
-        <span class="kpi-sub">Liquidez inmediata</span>
+    <!-- Barra indicadora cuando el Modo Demo esta activo -->
+    <div id="demo-mode-indicator-bar" class="demo-indicator-bar hidden">
+      <div class="demo-bar-info">
+        <span class="badge badge-honey">MODO ADMINISTRADOR</span>
+        <span>Perfil: <strong>prueba</strong> | Simulacion semestral precargada en el Dia 28 de Agosto (Mes 6 de 6). Tu partida estandar se encuentra preservada intacta.</span>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Deuda Bancaria (Descubierto)</span>
-        <span id="kpi-debt" class="kpi-value text-danger">$0,00</span>
-        <span id="kpi-rate" class="kpi-sub">TNA 60% | TEM 5.00%</span>
+      <div class="demo-bar-actions">
+        <button id="btn-reload-demo" class="btn btn-xs btn-outline-warning">Reiniciar Demo (Mes 6, Dia 28)</button>
+        <button id="btn-return-standard" class="btn btn-xs btn-outline-light">Volver a Partida Estandar</button>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Patrimonio Neto</span>
-        <span id="kpi-net-worth" class="kpi-value text-accent">$1.200.000,00</span>
-        <span class="kpi-sub">Efectivo menos deuda</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">IPC Acumulado</span>
-        <span id="kpi-ipc" class="kpi-value text-warning">1.0000x</span>
-        <span id="kpi-inflation-badge" class="kpi-sub">Base 100</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Bienestar / Utilidad</span>
-        <span id="kpi-utility" class="kpi-value text-magenta">0.0 pts</span>
-        <span class="kpi-sub">Satisfacción total</span>
-      </div>
-    </section>
+    </div>
 
-    <!-- Barra de Salario y Asistencia Acumulada -->
-    <section class="salary-strip glass-panel">
-      <div class="salary-metric">
-        <span class="sub-title">Salario Base Mensual</span>
-        <span id="strip-base-salary" class="val-text">$1.200.000,00</span>
-      </div>
-      <div class="salary-metric">
-        <span class="sub-title">Días Trabajados</span>
-        <span id="strip-worked-days" class="val-text text-success">0 / 30</span>
-      </div>
-      <div class="salary-metric">
-        <span class="sub-title">Salario Devengado</span>
-        <span id="strip-projected-salary" class="val-text text-success">$0,00</span>
-      </div>
-      <div class="salary-metric">
-        <span class="sub-title">Descuento por Ausencias</span>
-        <span id="strip-absence-deduction" class="val-text text-danger">$0,00</span>
-      </div>
-      <div class="salary-metric">
-        <span class="sub-title">Horas Extras Acumuladas</span>
-        <span id="strip-overtime-bonus" class="val-text text-accent">+$0,00</span>
-      </div>
-    </section>
 
-    <!-- Contenido Principal: Dos Columnas -->
-    <main class="main-content">
-      <!-- Columna Izquierda: Calendario de 30 Días y Jornada Laboral -->
-      <section class="left-column">
-        <div class="glass-panel calendar-panel">
-          <div class="panel-header">
-            <h2>📅 Calendario Laboral del Mes (30 Días)</h2>
-            <div class="calendar-legend">
-              <span class="legend-item"><span class="dot dot-worked"></span> Trabajado</span>
-              <span class="legend-item"><span class="dot dot-absent"></span> Ausente</span>
-              <span class="legend-item"><span class="dot dot-current"></span> Hoy</span>
-            </div>
-          </div>
-          <div id="calendar-grid" class="calendar-grid">
-            <!-- Los 30 días se renderizan dinámicamente con JS -->
-          </div>
-          <div class="calendar-actions">
-            <button id="btn-open-work-quiz" class="btn btn-primary">
-              💼 Trabajar Hoy (Mini-Juego Diario)
-            </button>
-            <button id="btn-skip-day" class="btn btn-warning">
-              🏖️ No ir a Trabajar (Ausencia)
-            </button>
-            <button id="btn-advance-day" class="btn btn-secondary">
-              ⏭️ Avanzar Día
-            </button>
-          </div>
-        </div>
+    <!-- ====================================================================
+         MODULO DEL JUEGO ACTIVO (Lo primero que ve el usuario)
+         ==================================================================== -->
+    <section class="top-level-section">
+      <div class="level-header">
+        <h2>Cronograma y Acciones Principales</h2>
+      </div>
 
-        <!-- Módulo de Horas Extras Opcionales -->
-        <div class="glass-panel overtime-panel">
-          <div class="panel-header">
+      <div class="active-game-grid">
+
+        <!-- CALENDARIO MENSUAL DE 30 DIAS (Tamaño Destacado) -->
+        <div class="card calendar-card">
+          <div class="card-top-bar">
             <div>
-              <h3>⏱️ Horas Extras Opcionales (Fórmulas Financieras)</h3>
-              <p class="panel-desc">Resuelve fórmulas con los datos reales de tu partida para ganar ingresos extra.</p>
+              <h3 class="card-heading" id="calendar-heading">Calendario Mensual - Marzo (30 Dias)</h3>
+              <p class="card-caption">Visualiza tus jornadas laborales, asistencias e insignias de horas extras.</p>
             </div>
-            <button id="btn-request-overtime" class="btn btn-accent btn-sm">Nuevo Desafío</button>
+            <div class="calendar-legend-pills">
+              <span class="pill pill-worked">Trabajado</span>
+              <span class="pill pill-overtime">Horas extras</span>
+              <span class="pill pill-absent">Ausente</span>
+              <span class="pill pill-current">Hoy</span>
+            </div>
           </div>
-          <div id="overtime-card" class="overtime-card hidden">
-            <h4 id="overtime-title">Cálculo Financiero</h4>
-            <p id="overtime-statement" class="statement-text"></p>
-            <div id="overtime-options" class="options-container"></div>
-            <p id="overtime-hint" class="hint-text"></p>
+
+          <!-- Cabecera de dias de la semana (Lunes a Domingo) -->
+          <div class="calendar-weekdays-header">
+            <span>LUN</span>
+            <span>MAR</span>
+            <span>MIE</span>
+            <span>JUE</span>
+            <span>VIE</span>
+            <span>SAB</span>
+            <span>DOM</span>
           </div>
-          <div id="overtime-empty" class="overtime-empty">
-            Haz clic en <strong>"Nuevo Desafío"</strong> para generar un problema con las cifras vigentes de tu partida.
+
+          <!-- Grilla de 30 casilleros destacados -->
+          <div id="calendar-cells-grid" class="calendar-cells-grid">
+            <!-- Casilleros inyectados por JavaScript -->
           </div>
         </div>
-      </section>
 
-      <!-- Columna Derecha: Estilo de Vida, Gastos Fijos y Gráficos -->
-      <section class="right-column">
-        <!-- Gráfico de Distribución de Gastos -->
-        <div class="glass-panel chart-panel">
-          <div class="panel-header">
-            <h3>📊 Estructura de Gastos del Mes</h3>
+        <!-- PANEL DE ACCIONES PRINCIPALES DEL DIA -->
+        <div class="card actions-card">
+          <div class="card-top-bar">
+            <div>
+              <span id="day-badge-label" class="badge badge-sky">Dia 1 en Curso</span>
+              <h3 class="card-heading" style="margin-top:0.35rem;">Acciones de la Jornada</h3>
+            </div>
+            <span id="day-status-pill" class="status-indicator status-pending">Pendiente</span>
           </div>
-          <div class="chart-wrapper">
+
+          <div class="actions-summary-box">
+            <div class="summary-line">
+              <span class="text-muted">Valor de la jornada:</span>
+              <strong class="text-mint">+$40.000,00</strong>
+            </div>
+            <div class="summary-line">
+              <span class="text-muted">Sueldo acumulado hoy:</span>
+              <strong id="card-acc-salary">$0,00</strong>
+            </div>
+            <div class="summary-line">
+              <span class="text-muted">Horas extras del mes:</span>
+              <strong id="card-acc-overtime" class="text-sky">+$0,00</strong>
+            </div>
+          </div>
+
+          <!-- BOTONES PRINCIPALES DE ACCION (SIN CORCHETES) -->
+          <div class="main-buttons-stack">
+            <button id="btn-action-work" class="btn btn-primary btn-lg btn-block">
+              IR A TRABAJAR
+            </button>
+            <button id="btn-action-skip" class="btn btn-outline-danger btn-block">
+              NO IR A TRABAJAR
+            </button>
+            <button id="btn-action-overtime" class="btn btn-accent btn-block" disabled>
+              HORAS EXTRAS
+            </button>
+          </div>
+
+          <!-- Boton de Avance de Jornada -->
+          <div class="advance-wrapper">
+            <button id="btn-action-advance" class="btn btn-secondary btn-block" disabled>
+              Avanzar al Siguiente Dia >>
+            </button>
+          </div>
+
+          <p id="action-hint-text" class="action-helper-text">
+            Comienza el dia seleccionando IR A TRABAJAR para iniciar tu jornada o NO IR A TRABAJAR si decides ausentarte.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         NIVEL INFERIOR: PANEL ANALITICO SECUNDARIO (Desplazable hacia abajo)
+         ==================================================================== -->
+    <section class="bottom-level-section">
+      <div class="level-header">
+        <h2>Metricas Financieras, Gastos Fijos y Liquidacion</h2>
+      </div>
+
+      <div class="analytics-grid">
+
+        <!-- Metricas de Sueldo y Asistencia -->
+        <div class="card analytic-card">
+          <div class="card-top-bar">
+            <h3 class="card-heading">Liquidacion Salarial</h3>
+            <span class="badge badge-mint">Mensual</span>
+          </div>
+          <div class="analytic-items-list">
+            <div class="metric-row">
+              <span class="text-muted">Salario Base Mensual</span>
+              <span id="metric-base-salary" class="metric-val">$1.200.000,00</span>
+            </div>
+            <div class="metric-row">
+              <span class="text-muted">Jornadas Asistidas</span>
+              <span id="metric-worked-days" class="metric-val text-mint">0 de 30</span>
+            </div>
+            <div class="metric-row">
+              <span class="text-muted">Sueldo Devengado Efectivo</span>
+              <span id="metric-projected-salary" class="metric-val text-mint">$0,00</span>
+            </div>
+            <div class="metric-row">
+              <span class="text-muted">Deduccion por Inasistencias</span>
+              <span id="metric-absence-deduction" class="metric-val text-rose">-$0,00</span>
+            </div>
+            <div class="metric-row">
+              <span class="text-muted">Bono de Horas Extras</span>
+              <span id="metric-overtime-bonus" class="metric-val text-sky">+$0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estructura de Gastos: Grafico Chart.js -->
+        <div class="card analytic-card">
+          <div class="card-top-bar">
+            <h3 class="card-heading">Distribucion de Gastos</h3>
+            <span class="badge badge-sky">Estructura</span>
+          </div>
+          <div class="chart-box">
             <canvas id="expensesChart"></canvas>
           </div>
         </div>
 
-        <!-- Costos Fijos Obligatorios -->
-        <div class="glass-panel fixed-costs-panel">
-          <div class="panel-header">
-            <h3>🔒 Gastos Fijos Obligatorios (Indexados por IPC)</h3>
-            <span id="total-fixed-badge" class="badge badge-danger">$0,00</span>
+        <!-- Contratos Fijos Obligatorios -->
+        <div class="card analytic-card">
+          <div class="card-top-bar">
+            <h3 class="card-heading">Contratos Fijos (Recoleta)</h3>
+            <span id="badge-total-fixed" class="badge badge-rose">Total: $0,00</span>
           </div>
-          <ul id="fixed-costs-list" class="costs-list">
-            <!-- Elementos fijos inyectados por JS -->
+          <p class="card-caption">Gastos indispensables indexados mes a mes por la variacion del IPC.</p>
+          <ul id="fixed-costs-ul" class="fixed-items-list">
+            <!-- Items fijos inyectados por JS -->
           </ul>
         </div>
 
-        <!-- Gastos Discrecionales y Estilo de Vida (Teoría del Consumidor) -->
-        <div class="glass-panel lifestyle-panel">
-          <div class="panel-header">
-            <h3>🎨 Estilo de Vida & Ocio (Efecto Sustitución)</h3>
-            <p class="panel-desc">Elige entre alternativas suntuarias (+bienestar) o económicas (+ahorro).</p>
-          </div>
-          <div id="lifestyle-selectors" class="lifestyle-grid">
-            <!-- Selectores de Ocio inyectados por JS -->
-          </div>
-        </div>
+      </div>
 
-        <!-- Botón de Fin de Mes -->
-        <div class="end-month-box">
-          <button id="btn-end-month" class="btn btn-success btn-lg btn-block" disabled>
-            💰 Cerrar y Liquidar Mes (Día 30)
+      <!-- Tarjeta de Cierre de Mes (Liquidación al Día 30) -->
+      <div class="card end-month-card">
+        <div class="end-month-content">
+          <div>
+            <span class="badge badge-mint">Balance Mensual</span>
+            <h3 class="card-heading" style="margin-top:0.35rem;">Cierre y Liquidacion de Haberes</h3>
+            <p id="end-month-helper" class="text-muted">Debes transcurrir los 30 dias del mes para liquidar sueldos, amortizar deudas y computar intereses.</p>
+          </div>
+          <button id="btn-end-month-trigger" class="btn btn-mint btn-lg" disabled>
+            Cerrar y Liquidar Mes (Dia 30)
           </button>
-          <p id="end-month-hint" class="hint-center">Debes llegar al día 30 para liquidar el mes.</p>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
+
   </div>
 
-  <!-- MODALES NATIVOS <dialog> CON OVERSCROLL CONTAINMENT -->
 
-  <!-- Modal 1: Mini-Juego Diario (Jornada Laboral) -->
-  <dialog id="modal-work-quiz" class="app-dialog">
-    <div class="dialog-content">
+  <!-- ====================================================================
+       SISTEMA DE MODALES INTEGRADOS (SIN CORCHETES NI ALERTS NATIVOS)
+       ==================================================================== -->
+
+  <!-- Modal 1: Dialogo Reutilizable de Notificacion / Alerta Estilizada -->
+  <dialog id="modal-notification" class="app-dialog">
+    <div class="dialog-box">
       <div class="dialog-header">
-        <span class="badge badge-accent" id="quiz-topic">Economía</span>
-        <h3 id="quiz-title">Jornada Laboral - Mini-Juego</h3>
+        <div class="dialog-header-meta">
+          <span id="notif-badge" class="badge badge-sky">Informacion</span>
+        </div>
+        <h3 id="notif-title" class="dialog-title">Notificacion</h3>
       </div>
-      <p id="quiz-question" class="quiz-question-text"></p>
-      <div id="quiz-options-container" class="options-container"></div>
-      <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+      <div class="dialog-body">
+        <p id="notif-message" class="dialog-message-text"></p>
+      </div>
       <div class="dialog-footer">
-        <button id="btn-close-quiz" class="btn btn-secondary" style="display:none;">Continuar</button>
+        <button id="btn-close-notif" class="btn btn-primary btn-block">Entendido</button>
       </div>
     </div>
   </dialog>
 
-  <!-- Modal 2: Liquidación de Fin de Mes -->
-  <dialog id="modal-end-month" class="app-dialog modal-wide">
-    <div class="dialog-content">
+  <!-- Modal 2: Dialogo Reutilizable de Confirmacion (Reemplazo de confirm()) -->
+  <dialog id="modal-confirm" class="app-dialog">
+    <div class="dialog-box">
       <div class="dialog-header">
-        <h3>📋 Liquidación Mensual y Resumen Financiero</h3>
-        <span id="modal-month-label" class="badge badge-month">Mes Cerrado</span>
+        <div class="dialog-header-meta">
+          <span class="badge badge-rose">Confirmacion Requerida</span>
+        </div>
+        <h3 id="confirm-title" class="dialog-title">Confirmar Accion</h3>
       </div>
-      <div id="end-month-summary-body" class="summary-grid">
-        <!-- Resumen financiero completo inyectado por JS -->
+      <div class="dialog-body">
+        <p id="confirm-message" class="dialog-message-text"></p>
       </div>
-      <div class="dialog-footer">
-        <button id="btn-acknowledge-month" class="btn btn-primary btn-block">Avanzar al Próximo Mes</button>
+      <div class="dialog-footer dialog-footer-split">
+        <button id="btn-confirm-cancel" class="btn btn-secondary">Cancelar</button>
+        <button id="btn-confirm-accept" class="btn btn-danger">Confirmar</button>
       </div>
     </div>
   </dialog>
 
-  <!-- Script principal de la interfaz -->
+  <!-- Modal 3: Flujo Secuencial de Decisiones Diarias (Trabajo y Ausencias) -->
+  <dialog id="modal-daily-flow" class="app-dialog modal-flow">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <div class="dialog-header-meta">
+          <span id="flow-step-tag" class="badge badge-sky">Etapa 1 de 5</span>
+        </div>
+        <h3 id="flow-title" class="dialog-title">Transcurso del Dia</h3>
+      </div>
+
+      <div class="dialog-body">
+        <!-- Indicador de progreso de la secuencia diaria -->
+        <div class="flow-progress-bar">
+          <div id="flow-progress-fill" class="flow-progress-fill" style="width: 20%;"></div>
+        </div>
+
+        <div id="flow-step-content" class="flow-step-content">
+          <!-- Inyeccion dinamica de cada etapa: Trivia/Ausencia, Desayuno, Movilidad, Almuerzo, Cena -->
+        </div>
+
+        <div id="flow-step-feedback" class="flow-feedback-box hidden">
+          <!-- Feedback inmediato de la eleccion realizada -->
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button id="btn-flow-next" class="btn btn-primary btn-block hidden">
+          Continuar >>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 4: Desafio Interactivo de Horas Extras -->
+  <dialog id="modal-overtime" class="app-dialog">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <div class="dialog-header-meta">
+          <span class="badge badge-mint">Horas Extras Activas</span>
+        </div>
+        <h3 id="overtime-modal-title" class="dialog-title">Calculo Financiero en Tiempo Real</h3>
+      </div>
+      <div class="dialog-body">
+        <p id="overtime-modal-statement" class="dialog-statement-text"></p>
+        <div id="overtime-modal-options" class="options-vertical-grid"></div>
+        <p id="overtime-modal-hint" class="hint-italic-text"></p>
+        <div id="overtime-modal-feedback" class="flow-feedback-box hidden"></div>
+      </div>
+      <div class="dialog-footer">
+        <button id="btn-close-overtime-modal" class="btn btn-secondary btn-block hidden">
+          Volver al Tablero
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 5: Pop-up de Evento Inesperado / Crisis Financiera -->
+  <dialog id="modal-crisis-popup" class="app-dialog modal-crisis">
+    <div class="dialog-box">
+      <div class="dialog-header header-crisis">
+        <div class="dialog-header-meta">
+          <span class="badge badge-rose">Alerta de Emergencia Economica</span>
+        </div>
+        <h3 id="crisis-popup-title" class="dialog-title">Gasto Imprevisto</h3>
+      </div>
+      <div class="dialog-body">
+        <p id="crisis-popup-desc" class="dialog-message-text"></p>
+        <div class="crisis-cost-banner">
+          <span class="text-muted">Costo total indexado:</span>
+          <strong id="crisis-popup-amount" class="text-rose">$0,00</strong>
+        </div>
+        <p class="text-caption">Toma una decision financiera de resolucion inmediata:</p>
+        <div class="crisis-options-stack">
+          <button id="btn-crisis-opt-cash" class="btn btn-crisis-card">
+            <span class="opt-bold">Pagar al Contado</span>
+            <span id="crisis-cash-sub" class="opt-desc">Debita el monto inmediatamente. Menor perdida de bienestar.</span>
+          </button>
+          <button id="btn-crisis-opt-finance" class="btn btn-crisis-card">
+            <span class="opt-bold">Financiar en Cuotas (+15%)</span>
+            <span id="crisis-finance-sub" class="opt-desc">Recargo financiero por financiamiento. Mayor estres financiero.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 6: Liquidacion y Resumen Mensual (Cierre Dia 30) -->
+  <dialog id="modal-month-summary" class="app-dialog modal-wide">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <div class="dialog-header-meta">
+          <span class="badge badge-mint">Liquidacion Mensual</span>
+        </div>
+        <h3 id="summary-month-heading" class="dialog-title">Balance Financiero</h3>
+      </div>
+      <div class="dialog-body">
+        <div id="summary-breakdown-container" class="summary-two-columns">
+          <!-- Inyeccion dinamica del resumen -->
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button id="btn-advance-month-confirm" class="btn btn-mint btn-block">
+          Avanzar al Proximo Mes >>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 7: Acceso y Carga del Modo Administrador (Dia 28, Mes 6 - Usuario prueba) -->
+  <dialog id="modal-admin-demo" class="app-dialog modal-wide">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <div class="dialog-header-meta">
+          <span class="badge badge-honey">MODO ADMINISTRADOR</span>
+          <span class="badge badge-sky">Usuario: prueba</span>
+        </div>
+        <h3 class="dialog-title">Demostracion Semestral (Mes 6, Dia 28 - Perfil prueba)</h3>
+      </div>
+      <div class="dialog-body">
+        <p class="dialog-desc" style="margin-bottom:1rem;">
+          Este modulo carga una simulacion con los primeros 5 meses completados para el usuario <strong>prueba</strong> (acumulando sueldos percibidos, gastos reales e inflacion de IPC). Queda posicionado en el <strong>Dia 28 de Agosto (Mes 6 de 6)</strong>, permitiendo jugar las ultimas jornadas y presenciar el cierre y balance final de los 6 meses.
+        </p>
+
+        <div class="admin-preview-grid">
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Perfil de Usuario</span>
+            <strong class="text-sky">prueba</strong>
+            <span class="preview-card-sub">Simulacion de muestra</span>
+          </div>
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Salto Temporal</span>
+            <strong class="text-honey">Mes 6, Dia 28</strong>
+            <span class="preview-card-sub">Agosto (a 2 dias del cierre final)</span>
+          </div>
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Meses Previos</span>
+            <strong class="text-mint">5 Meses Completos</strong>
+            <span class="preview-card-sub">Marzo a Julio liquidados</span>
+          </div>
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Saldo en Billetera</span>
+            <strong class="text-mint">~$2.200.000,00 ARS</strong>
+            <span class="preview-card-sub">Liquidez neta tras 5.9 meses</span>
+          </div>
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Nivel de Bienestar</span>
+            <strong class="text-purple">~570.0 PTS</strong>
+            <span class="preview-card-sub">Satisfaccion semestral solida</span>
+          </div>
+          <div class="admin-preview-card">
+            <span class="preview-card-label">Inflacion Acumulada</span>
+            <strong class="text-honey">~1.3059x (+30.59%)</strong>
+            <span class="preview-card-sub">IPC tras shock macroeconomico</span>
+          </div>
+        </div>
+
+        <div class="admin-notice-box" style="margin-top:1.1rem; padding:0.9rem; background:rgba(14, 165, 233, 0.08); border:1px solid rgba(14, 165, 233, 0.25); border-radius:8px; font-size:0.85rem; line-height:1.45;">
+          <strong>Preservacion Total de tu Partida:</strong> Tu partida normal en curso queda guardada y congelada en segundo plano. Podras regresar a ella en cualquier momento sin perder tu progreso.
+        </div>
+      </div>
+      <div class="dialog-footer" style="display:flex; justify-content:flex-end; gap:0.75rem;">
+        <button id="btn-admin-cancel" class="btn btn-secondary">Cancelar y Volver</button>
+        <button id="btn-admin-load-demo" class="btn btn-warning">Cargar Simulacion (Mes 6, Dia 28) >></button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 8: Evaluacion y Resumen Final de los 6 Meses -->
+  <dialog id="modal-final-summary" class="app-dialog modal-final-fullscreen">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <div class="dialog-header-meta">
+          <span class="badge badge-mint">INFORME FINAL CONSOLIDADO</span>
+          <span id="final-user-badge" class="badge badge-sky">Usuario: prueba</span>
+        </div>
+        <h3 class="dialog-title">Evaluacion Final del Tutor de Economia (Semestre Completo)</h3>
+      </div>
+      <div class="dialog-body">
+        <!-- Banner de diagnostico y salud financiera -->
+        <div id="final-status-banner" class="final-status-banner">
+          <!-- Inyectado dinamicamente -->
+        </div>
+
+        <!-- Grilla de metricas de los 6 meses -->
+        <div id="final-metrics-grid" class="final-metrics-grid">
+          <!-- Inyectado dinamicamente -->
+        </div>
+
+        <!-- Dictamen pedagogico del tutor de economia -->
+        <div class="final-verdict-box">
+          <h4 class="text-mint">Dictamen Pedagogico de Teoria del Consumidor</h4>
+          <p id="final-verdict-text" class="dialog-message-text"></p>
+        </div>
+
+        <!-- Tabla o desglose mensual consolidado (Mes 1 al 6) -->
+        <div class="final-history-box">
+          <h4 class="text-sky">Evolucion Historica Semestral (Mes 1 al 6)</h4>
+          <div id="final-history-table-container" class="final-history-container">
+            <!-- Tabla inyectada dinamicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="text-muted" style="font-size:0.85rem;">Simulacion Finalizada - 6 Turnos Mensuales Concluidos</span>
+        <button id="btn-final-restart" class="btn btn-warning">Nueva Partida / Reiniciar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Script Principal de Control UI/UX -->
   <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

@@ -33,18 +33,23 @@ def get_default_fixed_costs() -> List[FixedCostItem]:
     return [
         FixedCostItem(
             name="Alquiler Departamento (Recoleta)",
-            base_cost=Decimal("550000.00"),
+            base_cost=Decimal("370000.00"),
             is_subject_to_ipc=False  # Contrato fijo durante el semestre
         ),
         FixedCostItem(
             name="Servicios Públicos (Edesur $45.000 + AySA $25.000)",
-            base_cost=Decimal("70000.00"),
+            base_cost=Decimal("120000.00"),
             is_subject_to_ipc=True  # Tarifas ajustables por IPC
         ),
         FixedCostItem(
             name="Membresía Platino Plus (Megatlon)",
-            base_cost=Decimal("65000.00"),
+            base_cost=Decimal("50000.00"),
             is_subject_to_ipc=True  # Cuota de gimnasio indexada
+        ),
+        FixedCostItem(
+            name="Canasta Basica Inicial de Alimentos",
+            base_cost=Decimal("80000.00"),
+            is_subject_to_ipc=True  # Alimentos indispensables
         ),
     ]
 
@@ -75,7 +80,7 @@ def get_catalog_choices() -> Dict[Category, List[ConsumptionChoice]]:
                 utility=Decimal("30.0"),
                 is_subject_to_ipc=True
             )
-        ],
+    ],
         Category.FOOD: [
             ConsumptionChoice(
                 id="food_delivery",
@@ -95,7 +100,7 @@ def get_catalog_choices() -> Dict[Category, List[ConsumptionChoice]]:
                 utility=Decimal("45.0"),
                 is_subject_to_ipc=True
             )
-        ],
+    ],
         Category.PERSONAL_CARE: [
             ConsumptionChoice(
                 id="care_barberia",
@@ -115,7 +120,7 @@ def get_catalog_choices() -> Dict[Category, List[ConsumptionChoice]]:
                 utility=Decimal("15.0"),
                 is_subject_to_ipc=True
             )
-        ],
+    ],
         Category.PETS: [
             ConsumptionChoice(
                 id="pet_premium",
@@ -135,7 +140,7 @@ def get_catalog_choices() -> Dict[Category, List[ConsumptionChoice]]:
                 utility=Decimal("25.0"),
                 is_subject_to_ipc=True
             )
-        ]
+    ]
     }
 
 
